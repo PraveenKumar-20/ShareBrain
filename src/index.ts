@@ -1,10 +1,11 @@
 import express, { json } from "express";
 import { z } from "zod";
-import bcrypt from "bcrypt";
-import { ContentModel, UserModel } from "./db";
+import bcrypt, { hash } from "bcrypt";
+import { ContentModel, LinkModel, UserModel } from "./db";
 import jwt from "jsonwebtoken";
 import { JWTSECRET } from "./config";
 import { userMiddleware } from "./middleware";
+import { random } from "./utils";
 const app = express();
 app.use(express.json());
 
@@ -160,7 +161,7 @@ app.delete("/api/v1/content", async (req, res) => {
 
   await ContentModel.deleteMany({
     contentId,
-    //@ts-ignore
+    // @ts-ignore
     userId: req.userId,
   });
 
@@ -169,8 +170,74 @@ app.delete("/api/v1/content", async (req, res) => {
   });
 });
 
-app.post("/api/v1/brain/share", (req, res) => {});
+app.post("/api/v1/brain/share", userMiddleware, async (req, res) => {
+  const { share } = req.body;
 
-app.get("/api/v1/brain/:shareLink", (req, res) => {});
+  if (share) {
+    const existingLink = await LinkModel.findOne({
+      // @ts-ignore
+      userId: req.userId,
+    });
+
+    if (existingLink) {
+      res.json({
+        hash: existingLink.hash,
+      });
+      return;
+    }
+
+    const hash = random(10);
+
+    LinkModel.create({
+      // @ts-ignore
+      userId: req.userId,
+      hash: hash,
+    });
+
+    res.json({ hash });
+  } else {
+    LinkModel.deleteOne({
+      // @ts-ignore
+      userId: req.userId,
+    });
+    res.json({
+      message: "Removed Link",
+    });
+  }
+});
+
+app.get("/api/v1/brain/:shareLink", async (req, res) => {
+  const hash = req.params.shareLink;
+
+  const link = await LinkModel.findOne({
+    hash,
+  });
+
+  if (!link) {
+    res.status(404).json({
+      message: "Invalid share Link",
+    });
+    return;
+  }
+
+  const content = await ContentModel.find({
+    userId: link.userId,
+  });
+
+  const user = await UserModel.findOne({
+    _id: link.userId,
+  });
+
+  if (!user) {
+    res.status(404).json({
+      message: "User not found",
+    });
+    return;
+  }
+  res.json({
+    username: user.username,
+    content,
+  });
+});
 
 app.listen(3000);

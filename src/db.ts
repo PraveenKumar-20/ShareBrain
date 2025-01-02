@@ -1,6 +1,7 @@
 import mongoose, { model, Schema } from "mongoose";
+import { MongodbURI } from "./config";
 
-
+mongoose.connect(MongodbURI);
 
 const UserSchema = new Schema({
   username: { type: String, unique: true },
