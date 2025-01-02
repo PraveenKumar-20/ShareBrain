@@ -1,5 +1,5 @@
 import mongoose, { model, Schema } from "mongoose";
-import { MongodbURI } from "./config";
+import { MongodbURI } from "./configuration";
 
 mongoose.connect(MongodbURI);
 

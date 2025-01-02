@@ -3,7 +3,7 @@ import { z } from "zod";
 import bcrypt, { hash } from "bcrypt";
 import { ContentModel, LinkModel, UserModel } from "./db";
 import jwt from "jsonwebtoken";
-import { JWTSECRET } from "./config";
+import { JWTSECRET } from "./configuration";
 import { userMiddleware } from "./middleware";
 import { random } from "./utils";
 const app = express();
